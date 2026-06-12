@@ -53,7 +53,7 @@ class CleanTab(ctk.CTkFrame):
         self._folder_entry.grid(row=0, column=1, padx=4, pady=12, sticky="ew")
         ctk.CTkButton(top, text="浏览", width=80,
                       command=self._browse).grid(row=0, column=2, padx=4, pady=12)
-        ctk.CTkButton(top, text="扫描", width=80, fg_color=Colors.PRIMARY,
+        ctk.CTkButton(top, text="扫描", width=80, fg_color=Colors.ACCENT,
                       command=self.scan).grid(row=0, column=3, padx=4, pady=12)
         self._folder_entry.bind("<Return>", lambda _e: self.scan())
         self._folder_var.trace_add("write", lambda *_: self._update_status())
@@ -190,7 +190,7 @@ class _OrphanRow(ctk.CTkFrame):
         self._item = item
         self._on_toggle = on_toggle
         self._var = ctk.BooleanVar(value=item.selected)
-        color = Colors.REJECTED if item.file_type == "raw" else Colors.PRIMARY
+        color = Colors.REJECTED if item.file_type == "raw" else Colors.ACCENT
         text = f"[{item.file_type.upper()}]  {item.display_name}   ({item.size_mb} MB)"
         ctk.CTkCheckBox(self, text=text, variable=self._var,
                         text_color=color,

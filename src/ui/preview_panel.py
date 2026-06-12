@@ -59,37 +59,47 @@ class PreviewPanel(ctk.CTkFrame):
         self._img_frame.pack_propagate(False)
 
         self._image_label = ctk.CTkLabel(
-            self._img_frame, text="(未选择)",
+            self._img_frame, text="点击照片查看预览",
             fg_color=Colors.SURFACE,
             text_color=Colors.TEXT_DISABLED,
+            font=ctk.CTkFont(size=14),
         )
         self._image_label.pack(fill="both", expand=True)
         self._image_label.bind("<Double-Button-1>", self._handle_image_double)
 
         # Filename
         self._name_lbl = ctk.CTkLabel(self, text="", anchor="w",
-                                      font=ctk.CTkFont(size=14, weight="bold"),
+                                      font=ctk.CTkFont(size=15, weight="bold"),
                                       text_color=Colors.TEXT)
         self._name_lbl.pack(padx=14, pady=(0, 6), anchor="w")
 
-        # EXIF key/value table - two columns, 14 rows
+        # EXIF key/value table with section header
         self._exif_frame = ctk.CTkFrame(self, fg_color=Colors.SURFACE,
                                          corner_radius=8)
         self._exif_frame.pack(padx=12, pady=4, fill="x")
+        header = ctk.CTkLabel(self._exif_frame, text="拍摄信息",
+                              anchor="w", text_color=Colors.TEXT_DIM,
+                              font=ctk.CTkFont(size=10, weight="bold"))
+        header.grid(row=0, column=0, columnspan=4, sticky="ew",
+                     padx=10, pady=(8, 2))
+        sep = ctk.CTkFrame(self._exif_frame, height=1,
+                           fg_color=Colors.BORDER_SUBTLE)
+        sep.grid(row=1, column=0, columnspan=4, sticky="ew",
+                  padx=10, pady=(0, 4))
         self._exif_rows: list[tuple[ctk.CTkLabel, ctk.CTkLabel]] = []
         for _ in range(8):
             k = ctk.CTkLabel(self._exif_frame, text="", anchor="w",
                              text_color=Colors.TEXT_DIM,
-                             font=ctk.CTkFont(size=12))
+                             font=ctk.CTkFont(size=11))
             v = ctk.CTkLabel(self._exif_frame, text="", anchor="w",
                              text_color=Colors.TEXT,
-                             font=ctk.CTkFont(size=12))
+                             font=ctk.CTkFont(size=11))
             self._exif_rows.append((k, v))
         # Lay out as 2 columns x 8 rows inside the frame
         for idx, (k, v) in enumerate(self._exif_rows):
             r, c = divmod(idx, 2)
-            k.grid(row=r, column=2 * c, sticky="w", padx=(10, 4), pady=2)
-            v.grid(row=r, column=2 * c + 1, sticky="w", padx=(0, 10), pady=2)
+            k.grid(row=r + 2, column=2 * c, sticky="w", padx=(10, 4), pady=1)
+            v.grid(row=r + 2, column=2 * c + 1, sticky="w", padx=(0, 10), pady=1)
         self._exif_frame.grid_columnconfigure(0, weight=0)
         self._exif_frame.grid_columnconfigure(2, weight=0)
         self._exif_frame.grid_columnconfigure(1, weight=1)
@@ -98,23 +108,23 @@ class PreviewPanel(ctk.CTkFrame):
         # GPS / file size info
         self._gps_lbl = ctk.CTkLabel(self, text="", anchor="w", justify="left",
                                      text_color=Colors.TEXT_DIM,
-                                     font=ctk.CTkFont(size=12))
-        self._gps_lbl.pack(padx=14, pady=(6, 4), anchor="w")
+                                     font=ctk.CTkFont(size=11))
+        self._gps_lbl.pack(padx=14, pady=(4, 2), anchor="w")
 
         # Action row: pick state pills + rating
         actions = ctk.CTkFrame(self, fg_color="transparent")
         actions.pack(padx=12, pady=8, fill="x")
 
         self._btn_accepted = ctk.CTkButton(
-            actions, text="\u2713 Accept  A", height=32, corner_radius=16,
-            fg_color=Colors.ACCEPTED, hover_color="#2DA84A",
-            text_color="white",
+            actions, text="  \u2713 接受  A  ", height=30, corner_radius=15,
+            fg_color=Colors.ACCEPTED, hover_color=Colors.ACCEPTED,
+            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
             command=lambda: self._emit_pick("accepted"),
         )
         self._btn_rejected = ctk.CTkButton(
-            actions, text="\u2715 Delete  D", height=32, corner_radius=16,
-            fg_color=Colors.REJECTED, hover_color="#D9392F",
-            text_color="white",
+            actions, text="  \u2715 删除  D  ", height=30, corner_radius=15,
+            fg_color=Colors.REJECTED, hover_color=Colors.REJECTED,
+            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
             command=lambda: self._emit_pick("rejected"),
         )
         self._btn_accepted.pack(side="left", padx=(0, 4), expand=True, fill="x")

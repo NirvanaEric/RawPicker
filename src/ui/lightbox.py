@@ -82,7 +82,7 @@ class Lightbox(ctk.CTkToplevel):
         # Top bar - transparent so the dark stage shows through
         top = ctk.CTkFrame(self, fg_color=Colors.LIGHTBOX_BG, height=44, corner_radius=0)
         top.grid(row=0, column=0, sticky="ew")
-        top.grid_columnconfigure(2, weight=1)
+        top.grid_columnconfigure(1, weight=1)
         top.grid_propagate(False)
         # Status badge (top-left, like the grid)
         self._status_badge = ctk.CTkLabel(
@@ -92,18 +92,15 @@ class Lightbox(ctk.CTkToplevel):
         )
         self._status_badge.grid(row=0, column=0, padx=(14, 6), pady=8, sticky="w")
         self._title_lbl = ctk.CTkLabel(top, text="", anchor="w",
-                                       text_color="#F5F5F7",
-                                       font=ctk.CTkFont(size=13, weight="bold"))
+                                        text_color="#F5F5F7",
+                                        font=ctk.CTkFont(size=15, weight="bold"))
         self._title_lbl.grid(row=0, column=1, padx=4, pady=10, sticky="w")
-        self._counter_lbl = ctk.CTkLabel(top, text="", anchor="e",
-                                          text_color="#AEAEB2",
-                                          font=ctk.CTkFont(size=12))
-        self._counter_lbl.grid(row=0, column=2, padx=14, pady=10, sticky="e")
         ctk.CTkButton(
-            top, text="\u2715", width=32, height=32, corner_radius=16,
+            top, text="\u2715  关闭 (Esc)", width=90, height=30, corner_radius=15,
             fg_color=Colors.SURFACE_RAISED, hover_color=Colors.BORDER,
-            text_color=Colors.TEXT, command=self._on_close_request,
-        ).grid(row=0, column=3, padx=10, pady=6)
+            text_color="#F5F5F7", font=ctk.CTkFont(size=11),
+            command=self._on_close_request,
+        ).grid(row=0, column=2, padx=10, pady=7)
 
         # Body: image canvas only
         body = ctk.CTkFrame(self, fg_color=Colors.LIGHTBOX_BG, corner_radius=0)
@@ -119,51 +116,64 @@ class Lightbox(ctk.CTkToplevel):
         self._image_label.bind("<Configure>", self._on_configure)
         self._image_label.bind("<MouseWheel>", self._on_mousewheel)
 
-        # Bottom action bar - matches the dark stage; pill buttons keep
-        # their colored backgrounds for action affordance.
-        bottom = ctk.CTkFrame(self, fg_color=Colors.LIGHTBOX_BG, height=72, corner_radius=0)
-        bottom.grid(row=2, column=0, sticky="ew")
+        # Status indicator bar (thin colored line below image)
+        self._status_bar = ctk.CTkFrame(self, height=2, corner_radius=0,
+                                         fg_color="transparent")
+        self._status_bar.grid(row=2, column=0, sticky="ew")
+
+        # Bottom action bar - matches the dark stage
+        bottom = ctk.CTkFrame(self, fg_color=Colors.LIGHTBOX_BG, height=60, corner_radius=0)
+        bottom.grid(row=3, column=0, sticky="ew")
         bottom.grid_propagate(False)
 
-        # Center row: status pills + rating, all packed left in a centred frame
-        center_row = ctk.CTkFrame(bottom, fg_color="transparent")
-        center_row.pack(expand=True)
+        # Left: status pills + rating
+        action_row = ctk.CTkFrame(bottom, fg_color="transparent")
+        action_row.pack(side="left", padx=14, pady=13)
 
         self._btn_accepted = ctk.CTkButton(
-            center_row, text="\u2713  A", width=80, height=34, corner_radius=17,
+            action_row, text="  \u2713 接受  A  ", width=90, height=32, corner_radius=16,
             fg_color=Colors.ACCEPTED, hover_color=Colors.ACCEPTED,
-            text_color="white", font=ctk.CTkFont(weight="bold"),
+            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
             command=lambda: self._emit_pick("accepted"),
         )
         self._btn_accepted.pack(side="left", padx=(0, 4))
 
         self._btn_rejected = ctk.CTkButton(
-            center_row, text="\u2715  D", width=80, height=34, corner_radius=17,
+            action_row, text="  \u2715 删除  D  ", width=90, height=32, corner_radius=16,
             fg_color=Colors.REJECTED, hover_color=Colors.REJECTED,
-            text_color="white", font=ctk.CTkFont(weight="bold"),
+            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
             command=lambda: self._emit_pick("rejected"),
         )
         self._btn_rejected.pack(side="left", padx=(4, 12))
 
-        self._rating = RatingWidget(center_row, value=0, size=22,
+        self._rating = RatingWidget(action_row, value=0, size=22,
                                     on_change=self._emit_rating)
         self._rating.pack(side="left", padx=4)
 
-        # Nav on the right
+        # Right: counter + nav + zoom
         nav = ctk.CTkFrame(bottom, fg_color="transparent")
-        nav.pack(side="right", padx=14, pady=18)
-        ctk.CTkButton(nav, text="\u2190", width=40, height=34, corner_radius=17,
+        nav.pack(side="right", padx=14, pady=13)
+
+        self._counter_lbl = ctk.CTkLabel(nav, text="", anchor="e",
+                                          text_color="#AEAEB2",
+                                          font=ctk.CTkFont(size=12))
+        self._counter_lbl.pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(nav, text="\u25C0  上一张", width=90, height=30, corner_radius=15,
                       fg_color=Colors.SURFACE_RAISED, hover_color=Colors.BORDER,
-                      text_color=Colors.TEXT, command=self._prev
+                      text_color="#F5F5F7", font=ctk.CTkFont(size=11),
+                      command=self._prev
                       ).pack(side="left", padx=2)
-        ctk.CTkButton(nav, text="\u2192", width=40, height=34, corner_radius=17,
+        ctk.CTkButton(nav, text="下一张  \u25B6", width=90, height=30, corner_radius=15,
                       fg_color=Colors.SURFACE_RAISED, hover_color=Colors.BORDER,
-                      text_color=Colors.TEXT, command=self._next
+                      text_color="#F5F5F7", font=ctk.CTkFont(size=11),
+                      command=self._next
                       ).pack(side="left", padx=2)
-        ctk.CTkButton(nav, text="Z  1:1", width=64, height=34, corner_radius=17,
+        ctk.CTkButton(nav, text="Z  1:1", width=64, height=30, corner_radius=15,
                       fg_color=Colors.SURFACE_RAISED, hover_color=Colors.BORDER,
-                      text_color=Colors.TEXT, command=self._toggle_zoom
-                      ).pack(side="left", padx=(8, 0))
+                      text_color="#F5F5F7", font=ctk.CTkFont(size=11),
+                      command=self._toggle_zoom
+                      ).pack(side="left", padx=(4, 0))
 
     def _bind_keys(self) -> None:
         for ks in ("Escape", "Left", "Right", "a", "A", "d", "D",
@@ -234,14 +244,17 @@ class Lightbox(ctk.CTkToplevel):
         self._update_pick_buttons(item.pick_status)
 
     def _update_pick_buttons(self, status: str) -> None:
-        """Update status badge and button states."""
+        """Update status badge, status bar, and button states."""
         # Badge in top-left corner
         if status == "accepted":
             self._status_badge.configure(text="\u2713", fg_color=Colors.ACCEPTED)
+            self._status_bar.configure(fg_color=Colors.ACCEPTED)
         elif status == "rejected":
             self._status_badge.configure(text="\u2715", fg_color=Colors.REJECTED)
+            self._status_bar.configure(fg_color=Colors.REJECTED)
         else:
             self._status_badge.configure(text="", fg_color="transparent")
+            self._status_bar.configure(fg_color="transparent")
         # Button states
         if status == "accepted":
             self._btn_accepted.configure(fg_color=Colors.ACCEPTED, text_color="white")

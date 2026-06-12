@@ -28,6 +28,9 @@ class _FolderCard(ctk.CTkFrame):
                  on_primary: Optional[Callable[[], None]] = None,
                  **kw) -> None:
         super().__init__(master, fg_color=Colors.SURFACE, corner_radius=12, **kw)
+        # Bottom accent line for depth
+        self._accent = ctk.CTkFrame(self, height=1, fg_color=Colors.BORDER_SUBTLE)
+        self._accent.pack(side="bottom", fill="x", padx=12, pady=(0, 1))
         # Title row
         title_row = ctk.CTkFrame(self, fg_color="transparent")
         title_row.pack(fill="x", padx=12, pady=(10, 4))
@@ -42,8 +45,8 @@ class _FolderCard(ctk.CTkFrame):
         # Path entry
         self._var = ctk.StringVar(value=initial)
         self._entry = ctk.CTkEntry(
-            self, textvariable=self._var, height=32, corner_radius=8,
-            fg_color=Colors.BG_DARKER, border_width=0,
+            self, textvariable=self._var, height=30, corner_radius=6,
+            fg_color=Colors.BG, border_width=1, border_color=Colors.BORDER_SUBTLE,
             text_color=Colors.TEXT, placeholder_text="选择文件夹...",
         )
         self._entry.pack(fill="x", padx=12, pady=2)
@@ -52,14 +55,14 @@ class _FolderCard(ctk.CTkFrame):
         # Buttons
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(fill="x", padx=12, pady=(6, 4))
-        ctk.CTkButton(btn_row, text=browse_text, width=72, height=30,
+        ctk.CTkButton(btn_row, text=browse_text, width=72, height=28,
                       corner_radius=8, fg_color=Colors.SURFACE_RAISED,
                       hover_color=Colors.BORDER, text_color=Colors.TEXT,
                       command=on_browse).pack(side="left", padx=(0, 4))
         if on_primary:
-            ctk.CTkButton(btn_row, text=primary_text, width=0, height=30,
+            ctk.CTkButton(btn_row, text=primary_text, width=0, height=28,
                           corner_radius=8, fg_color=primary_color,
-                          hover_color=primary_color,
+                          hover_color=Colors.ACCENT_HOVER,
                           text_color="white", font=ctk.CTkFont(weight="bold"),
                           command=on_primary
                           ).pack(side="left", expand=True, fill="x")
@@ -150,9 +153,9 @@ class Sidebar(ctk.CTkFrame):
         self._filter_seg = ctk.CTkSegmentedButton(
             self, values=["全部", "A", "D", "GPS"],
             command=self._on_seg_filter,
-            height=30, corner_radius=8,
+            height=28, corner_radius=14,
             selected_color=Colors.ACCENT,
-            selected_hover_color=Colors.ACCENT,
+            selected_hover_color=Colors.ACCENT_HOVER,
             unselected_color=Colors.SURFACE,
             unselected_hover_color=Colors.SURFACE_RAISED,
             text_color=Colors.TEXT,
@@ -167,12 +170,28 @@ class Sidebar(ctk.CTkFrame):
                      text_color=Colors.TEXT_DIM,
                      font=ctk.CTkFont(size=11, weight="bold")
                      ).pack(padx=14, pady=(10, 4), anchor="w")
-        self._stats_lbl = ctk.CTkLabel(
-            stats_card, text="—", anchor="w", justify="left",
-            text_color=Colors.TEXT,
-            font=ctk.CTkFont(size=13, weight="bold"),
-        )
-        self._stats_lbl.pack(padx=14, pady=(0, 12), anchor="w")
+        self._stats_frames: list[ctk.CTkFrame] = []
+        for label, color in [("总文件", Colors.TEXT),
+                              ("接受 (A)", Colors.ACCEPTED),
+                              ("删除 (D)", Colors.REJECTED),
+                              ("伴随 RAW", Colors.ACCENT)]:
+            row = ctk.CTkFrame(stats_card, fg_color="transparent")
+            row.pack(fill="x", padx=14, pady=1)
+            dot = ctk.CTkLabel(row, text="●", width=12,
+                               text_color=color, font=ctk.CTkFont(size=9))
+            dot.pack(side="left", padx=(0, 4))
+            ctk.CTkLabel(row, text=label, anchor="w",
+                         text_color=Colors.TEXT_DIM,
+                         font=ctk.CTkFont(size=11)).pack(side="left")
+            val = ctk.CTkLabel(row, text="—", anchor="e",
+                               text_color=Colors.TEXT,
+                               font=ctk.CTkFont(size=14, weight="bold"))
+            val.pack(side="right")
+            self._stats_frames.append(val)
+        self._stats_extra = ctk.CTkLabel(
+            stats_card, text="", anchor="w",
+            text_color=Colors.TEXT_DIM, font=ctk.CTkFont(size=10))
+        self._stats_extra.pack(padx=14, pady=(2, 10), anchor="w")
 
         # Recent
         if self._config.recent_paths:
@@ -206,13 +225,11 @@ class Sidebar(ctk.CTkFrame):
 
     def set_stats(self, total: int, accepted: int, rejected: int,
                   with_raw: int) -> None:
-        body = (
-            f"总文件  {total}\n"
-            f"接受(A) {accepted}\n"
-            f"删除(D) {rejected}\n"
-            f"伴随RAW {with_raw}"
-        )
-        self._stats_lbl.configure(text=body)
+        values = [str(total), str(accepted), str(rejected), str(with_raw)]
+        for lbl, v in zip(self._stats_frames, values):
+            lbl.configure(text=v)
+        pending = total - accepted - rejected
+        self._stats_extra.configure(text=f"待处理 {pending}")
 
     # -- internals --------------------------------------------------------
     def _on_seg_filter(self, label: str) -> None:

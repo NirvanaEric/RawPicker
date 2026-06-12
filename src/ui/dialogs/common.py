@@ -14,7 +14,7 @@ class _DialogShell(ctk.CTkToplevel):
         self.title(title)
         self.geometry(f"{width}x{height}")
         self.resizable(False, False)
-        self.configure(fg_color=Colors.BG_BASE)
+        self.configure(fg_color=Colors.BG)
         self.grab_set()
         self.bind("<Escape>", lambda _e: self._on_cancel())
         self._result = None

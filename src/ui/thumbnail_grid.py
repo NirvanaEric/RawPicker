@@ -251,8 +251,8 @@ class ThumbnailGrid(ctk.CTkFrame):
                 state="hidden",
             )
             name = self._canvas.create_text(
-                (x1 + x2) // 2, y2 + 4, text=item.display_name,
-                fill=Colors.TEXT_DIM, font=("", 9), anchor="n",
+                x1 + pad, y2 + 4, text=item.display_name,
+                fill=Colors.TEXT_DIM, font=("", 10), anchor="nw",
             )
             cell = _Cell(
                 index=idx, item=item, bg=bg, border=border, image=image,
@@ -408,13 +408,13 @@ class ThumbnailGrid(ctk.CTkFrame):
         cell.raw_warn = 0
         cell.rating_glyphs = []
 
-        # Pick status pill (top-left)
+        # Pick status pill (top-left, white border for refined look)
         pill_x, pill_y = x1 + 6, y1 + 6
         status = item.pick_status
         if status == "accepted":
             cell.badge = self._canvas.create_oval(
                 pill_x, pill_y, pill_x + _BADGE_SIZE, pill_y + _BADGE_SIZE,
-                fill=Colors.ACCEPTED, outline="",
+                fill=Colors.ACCEPTED, outline="white", width=1.5,
             )
             self._canvas.create_text(
                 pill_x + _BADGE_SIZE // 2, pill_y + _BADGE_SIZE // 2,
@@ -423,7 +423,7 @@ class ThumbnailGrid(ctk.CTkFrame):
         elif status == "rejected":
             cell.badge = self._canvas.create_oval(
                 pill_x, pill_y, pill_x + _BADGE_SIZE, pill_y + _BADGE_SIZE,
-                fill=Colors.REJECTED, outline="",
+                fill=Colors.REJECTED, outline="white", width=1.5,
             )
             self._canvas.create_text(
                 pill_x + _BADGE_SIZE // 2, pill_y + _BADGE_SIZE // 2,
@@ -444,15 +444,15 @@ class ThumbnailGrid(ctk.CTkFrame):
                 text="RAW?", fill=Colors.TEXT_DIM, font=("", 9, "bold"),
             )
 
-        # Rating stars (bottom-right of the thumbnail, just above caption)
+        # Rating stars (bottom-left of the thumbnail, above caption)
         if item.rating:
             star_color = Colors.HIGH_RATING
             for i in range(item.rating):
-                sx = x2 - 8 - (item.rating - i) * 12
+                sx = x1 + 8 + i * 14
                 sy = y2 - 4
                 star = self._canvas.create_text(
-                    sx, sy, text="\u2605", fill=star_color, font=("", 10),
-                    anchor="se",
+                    sx, sy, text="\u2605", fill=star_color, font=("", 11),
+                    anchor="sw",
                 )
                 cell.rating_glyphs.append(star)
 
@@ -460,7 +460,7 @@ class ThumbnailGrid(ctk.CTkFrame):
         for i, cell in enumerate(self._cells):
             if i == self._current_index:
                 self._canvas.itemconfig(cell.bg, fill=Colors.ACCENT_SOFT,
-                                        outline=Colors.ACCENT, width=2)
+                                        outline=Colors.ACCENT, width=3)
                 self._canvas.itemconfig(cell.border, state="normal")
             else:
                 self._canvas.itemconfig(cell.bg, fill=Colors.SURFACE,
@@ -472,7 +472,8 @@ class ThumbnailGrid(ctk.CTkFrame):
             if i == self._current_index:
                 continue  # selection overrides
             if i == self._hover_index:
-                self._canvas.itemconfig(cell.bg, fill=Colors.SURFACE_RAISED)
+                self._canvas.itemconfig(cell.bg, fill=Colors.SURFACE_RAISED,
+                                        outline=Colors.ACCENT, width=1)
             else:
                 self._canvas.itemconfig(cell.bg, fill=Colors.SURFACE,
                                         outline=Colors.BORDER, width=1)

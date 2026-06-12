@@ -48,7 +48,7 @@ class RenameTab(ctk.CTkFrame):
         self._folder_entry.grid(row=0, column=1, padx=4, pady=12, sticky="ew")
         ctk.CTkButton(top, text="浏览", width=80,
                       command=self._browse).grid(row=0, column=2, padx=4, pady=12)
-        ctk.CTkButton(top, text="扫描", width=80, fg_color=Colors.PRIMARY,
+        ctk.CTkButton(top, text="扫描", width=80, fg_color=Colors.ACCENT,
                       command=self.scan).grid(row=0, column=3, padx=4, pady=12)
         self._folder_entry.bind("<Return>", lambda _e: self.scan())
 
@@ -93,7 +93,7 @@ class RenameTab(ctk.CTkFrame):
         action.grid(row=4, column=0, sticky="ew", padx=8, pady=8)
         self._count_lbl = ctk.CTkLabel(action, text="", text_color=Colors.TEXT_DIM)
         self._count_lbl.pack(side="left", padx=8)
-        ctk.CTkButton(action, text="执行重命名 (Ctrl+R)", width=180, fg_color=Colors.PRIMARY,
+        ctk.CTkButton(action, text="执行重命名 (Ctrl+R)", width=180, fg_color=Colors.ACCENT,
                       command=self._execute).pack(side="right", padx=4)
 
     # -- public API --------------------------------------------------------

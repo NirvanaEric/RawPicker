@@ -20,42 +20,62 @@ RAW_SET = frozenset(RAW_FORMATS)
 JPG_SET = frozenset(JPG_FORMATS)
 
 
-# -- Color palette (Apple Photos light) ------------------------------------
+# -- Color palette (Apple Photos inspired) ---------------------------------
 class Colors:
     # Surfaces
-    BG              = "#FFFFFF"   # window background, primary surface
-    BG_BASE         = BG          # legacy alias
-    SURFACE         = "#F2F2F7"   # alternating rows, sidebars
-    BG_LIGHT        = SURFACE     # legacy alias
-    SURFACE_RAISED  = "#FFFFFF"   # cards (lifted by subtle shadow)
-    BG_DARK         = SURFACE     # legacy alias
-    BG_DARKER       = BG          # legacy alias
+    BG              = "#FFFFFF"   # window background
+    SURFACE         = "#F2F2F7"   # sidebar, panels
+    SURFACE_RAISED  = "#FFFFFF"   # cards, raised elements
+    SURFACE_DEEP    = "#E8E8ED"   # deeper contrast for headers
 
     # Borders
-    BORDER          = "#D1D1D6"   # 1px hairlines
+    BORDER          = "#C6C6CD"   # 1px hairlines (slightly darker for clarity)
     BORDER_SUBTLE   = "#E5E5EA"   # very light divider
 
     # Text
     TEXT            = "#1C1C1E"   # primary
-    TEXT_DIM        = "#8E8E93"   # secondary / metadata
+    TEXT_DIM        = "#8A8A90"   # secondary / metadata
     TEXT_DISABLED   = "#C7C7CC"
 
     # Accent (Apple system blue)
     ACCENT          = "#0A84FF"
-    ACCENT_SOFT     = "#E5F0FF"   # 8% blue tint for selected-cell bg
-    PRIMARY         = ACCENT      # legacy alias
-    PICK_ACCENT     = ACCENT      # legacy alias
-    INFO            = ACCENT      # legacy alias
+    ACCENT_SOFT     = "#DAE9FF"   # blue tint for selected-cell bg
+    ACCENT_HOVER    = "#0070E0"   # darker blue for hover states
 
     # Status
     ACCEPTED        = "#34C759"   # green
+    ACCEPTED_SOFT   = "#E8F8ED"   # light green background
     REJECTED        = "#FF3B30"   # red
+    REJECTED_SOFT   = "#FFECEB"   # light red background
     PENDING         = "#8E8E93"   # grey
     WARNING         = "#FF9F0A"   # amber
     HIGH_RATING     = "#FFCC00"   # star fill (yellow)
 
-    # Lightbox image canvas (kept dark for photography evaluation)
+    # Lightbox (dark stage for photo evaluation)
     LIGHTBOX_BG     = "#0E0E10"
+
+    # --- Dark theme (Apple Photos dark) ------------------------------------
+    class Dark:
+        BG              = "#1C1C1E"
+        SURFACE         = "#2C2C2E"
+        SURFACE_RAISED  = "#3A3A3C"
+        SURFACE_DEEP    = "#242426"
+        BORDER          = "#48484A"
+        BORDER_SUBTLE   = "#38383A"
+        TEXT            = "#F5F5F7"
+        TEXT_DIM        = "#98989D"
+        TEXT_DISABLED   = "#636366"
+        ACCENT          = "#0A84FF"
+        ACCENT_SOFT     = "#1A2A44"
+        ACCENT_HOVER    = "#409CFF"
+        ACCEPTED        = "#30D158"
+        ACCEPTED_SOFT   = "#1A3A22"
+        REJECTED        = "#FF453A"
+        REJECTED_SOFT   = "#3A1A1A"
+        PENDING         = "#8E8E93"
+        WARNING         = "#FF9F0A"
+        HIGH_RATING     = "#FFD60A"
+        LIGHTBOX_BG     = "#0E0E10"
 
 
 # -- Application configuration ---------------------------------------------

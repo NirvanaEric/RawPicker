@@ -20,62 +20,77 @@ RAW_SET = frozenset(RAW_FORMATS)
 JPG_SET = frozenset(JPG_FORMATS)
 
 
-# -- Color palette (Apple Photos inspired) ---------------------------------
+# -- Color palette (professional dark theme) --------------------------------
+# Design principles (researched from Lightroom, Capture One, Darktable):
+#   1. NEUTRAL GRAY — UI must be chromatically neutral (R≈G≈B) so it does
+#      NOT distort the photographer's color perception of the photo.
+#   2. PHOTO IS THE STAR — the image area must always be the *brightest*
+#      element on screen. Everything else recedes.
+#   3. NO PURE BLACK/WHITE — pure #000 causes halation (eye strain); pure
+#      #FFF competes with the photo. Use off-whites and near-blacks.
+#   4. ELEVATION = LUMINANCE — higher surfaces are lighter, not shadowed.
+#      Shadows are invisible on dark backgrounds; depth comes from value.
+#   5. COLOR = FUNCTION ONLY — blue for selection/interaction, green for
+#      accepted, red for rejected. UI chrome stays grayscale.
+#   6. COMFORT FOR LONG SESSIONS — ~8-12:1 primary text contrast is
+#      *plenty*. Higher ratios cause eye fatigue (halation).
+# Reference: Adobe Spectrum, Apple HIG, Darktable LCH palette, Material.
 class Colors:
-    # Surfaces
-    BG              = "#FFFFFF"   # window background
-    SURFACE         = "#F2F2F7"   # sidebar, panels
-    SURFACE_RAISED  = "#FFFFFF"   # cards, raised elements
-    SURFACE_DEEP    = "#E8E8ED"   # deeper contrast for headers
+    # Surfaces (luminance hierarchy: higher number = lighter = closer)
+    BG              = "#2C2C2C"   # root window  (Spectrum gray-100)
+    SURFACE         = "#363636"   # sidebar, panels
+    SURFACE_RAISED  = "#404040"   # cards, elevated elements
+    SURFACE_DEEP    = "#262626"   # behind panels, section headers
 
-    # Borders
-    BORDER          = "#C6C6CD"   # 1px hairlines (slightly darker for clarity)
-    BORDER_SUBTLE   = "#E5E5EA"   # very light divider
+    # Borders — subtle; avoid hard lines that create visual noise
+    BORDER          = "#484848"   # 1px hairline
+    BORDER_SUBTLE   = "#3A3A3A"   # very light divider
 
-    # Text
-    TEXT            = "#1C1C1E"   # primary
-    TEXT_DIM        = "#8A8A90"   # secondary / metadata
-    TEXT_DISABLED   = "#C7C7CC"
+    # Text — three-tier hierarchy, off-white only
+    TEXT            = "#E0E0E0"   # primary   (~9:1 on BG)
+    TEXT_DIM        = "#98989D"   # secondary (~5:1 on BG)
+    TEXT_DISABLED   = "#636366"  # muted     (~2.5:1, intentional)
 
-    # Accent (Apple system blue)
+    # Accent (reserved for interactive elements only)
     ACCENT          = "#0A84FF"
-    ACCENT_SOFT     = "#DAE9FF"   # blue tint for selected-cell bg
-    ACCENT_HOVER    = "#0070E0"   # darker blue for hover states
+    ACCENT_SOFT     = "#1A2A44"  # blue tint for selected-cell bg
+    ACCENT_HOVER    = "#409CFF"
 
-    # Status
-    ACCEPTED        = "#34C759"   # green
-    ACCEPTED_SOFT   = "#E8F8ED"   # light green background
-    REJECTED        = "#FF3B30"   # red
-    REJECTED_SOFT   = "#FFECEB"   # light red background
-    PENDING         = "#8E8E93"   # grey
-    WARNING         = "#FF9F0A"   # amber
-    HIGH_RATING     = "#FFCC00"   # star fill (yellow)
+    # Status — semi-saturated, used sparingly for meaning only
+    ACCEPTED        = "#30D158"
+    ACCEPTED_SOFT   = "#1A3A22"
+    REJECTED        = "#FF453A"
+    REJECTED_SOFT   = "#3A1A1A"
+    PENDING         = "#8E8E93"
+    WARNING         = "#FF9F0A"
+    HIGH_RATING     = "#FFD60A"
 
-    # Lightbox (dark stage for photo evaluation)
+    # Lightbox — darker stage for focused evaluation
     LIGHTBOX_BG     = "#0E0E10"
 
-    # --- Dark theme (Apple Photos dark) ------------------------------------
-    class Dark:
-        BG              = "#1C1C1E"
-        SURFACE         = "#2C2C2E"
-        SURFACE_RAISED  = "#3A3A3C"
-        SURFACE_DEEP    = "#242426"
-        BORDER          = "#48484A"
-        BORDER_SUBTLE   = "#38383A"
-        TEXT            = "#F5F5F7"
-        TEXT_DIM        = "#98989D"
-        TEXT_DISABLED   = "#636366"
-        ACCENT          = "#0A84FF"
-        ACCENT_SOFT     = "#1A2A44"
-        ACCENT_HOVER    = "#409CFF"
-        ACCEPTED        = "#30D158"
-        ACCEPTED_SOFT   = "#1A3A22"
-        REJECTED        = "#FF453A"
-        REJECTED_SOFT   = "#3A1A1A"
-        PENDING         = "#8E8E93"
-        WARNING         = "#FF9F0A"
-        HIGH_RATING     = "#FFD60A"
-        LIGHTBOX_BG     = "#0E0E10"
+    # --- Light theme (Apple Photos warm) ---
+    class Light:
+        class Deep:
+            BG              = "#F5F5F7"
+            SURFACE         = "#FFFFFF"
+            SURFACE_RAISED  = "#FFFFFF"
+            SURFACE_DEEP    = "#EBEBF0"
+            BORDER          = "#D2D2D7"
+            BORDER_SUBTLE   = "#E5E5EA"
+            TEXT            = "#1D1D1F"
+            TEXT_DIM        = "#6E6E73"
+            TEXT_DISABLED   = "#C7C7CC"
+            ACCENT          = "#0A84FF"
+            ACCENT_SOFT     = "#E5F0FF"
+            ACCENT_HOVER    = "#006DDB"
+            ACCEPTED        = "#34C759"
+            ACCEPTED_SOFT   = "#E8F8ED"
+            REJECTED        = "#FF3B30"
+            REJECTED_SOFT   = "#FFECEB"
+            PENDING         = "#8E8E93"
+            WARNING         = "#FF9F0A"
+            HIGH_RATING     = "#FFCC00"
+            LIGHTBOX_BG     = "#0E0E10"
 
 
 # -- Application configuration ---------------------------------------------

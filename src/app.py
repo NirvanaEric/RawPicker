@@ -18,8 +18,8 @@ from .utils.config_store import load_config, save_config
 from .utils.image_cache import ImageCache, PreviewCache
 from .utils.thumbnail_loader import ThumbnailLoader
 
-# Light theme by default — the v3 design.
-ctk.set_appearance_mode("light")
+# Dark theme by default — professional photo-editing ergonomics.
+ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 

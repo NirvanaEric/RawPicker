@@ -165,7 +165,6 @@ class PickTab(ctk.CTkFrame):
         self._scan_poller = self.after(100, self._poll_scan_queue)
 
     def set_filter(self, value: str) -> None:
-        print(f"[DEBUG pick_tab] set_filter: {value!r}, items={len(self._items)}")
         self._filter = value
         self._apply_filter()
 
@@ -226,23 +225,18 @@ class PickTab(ctk.CTkFrame):
 
     def _apply_filter(self) -> None:
         items = self._filtered_items()
-        print(f"[DEBUG pick_tab] _apply_filter: filter={self._filter!r} -> {len(items)} items")
         self._grid.set_items(items)
         if self._view == "map":
             self._map_panel.set_items(items)
 
     def _filtered_items(self) -> List[PhotoItem]:
         f = self._filter
-        statuses = [it.pick_status for it in self._items]
-        print(f"[DEBUG pick_tab] _filtered_items: filter={f!r}, total={len(self._items)}, statuses={statuses[:10]}...")
         if f == "all":
             return list(self._items)
         if f == "checked":
             return [it for it in self._items if it.selected]
         if f in ("accepted", "rejected", "pending"):
-            result = [it for it in self._items if it.pick_status == f]
-            print(f"[DEBUG pick_tab]   -> filter={f!r} matched {len(result)} items")
-            return result
+            return [it for it in self._items if it.pick_status == f]
         if f == "gps":
             return [it for it in self._items if it.gps_lat is not None]
         return list(self._items)

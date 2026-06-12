@@ -29,7 +29,7 @@ class _FolderCard(ctk.CTkFrame):
                  **kw) -> None:
         super().__init__(master, fg_color=Colors.SURFACE, corner_radius=12, **kw)
         # Bottom accent line for depth
-        self._accent = ctk.CTkFrame(self, height=1, fg_color=Colors.BORDER_SUBTLE)
+        self._accent = ctk.CTkFrame(self, height=1, fg_color=Colors.BORDER)
         self._accent.pack(side="bottom", fill="x", padx=12, pady=(0, 1))
         # Title row
         title_row = ctk.CTkFrame(self, fg_color="transparent")
@@ -236,7 +236,6 @@ class Sidebar(ctk.CTkFrame):
         mapping = {"全部": "all", "A": "accepted",
                    "D": "rejected", "GPS": "gps"}
         value = mapping.get(label, "all")
-        print(f"[DEBUG sidebar] _on_seg_filter: label={label!r} -> value={value!r}")
         self._on_filter(value)
 
     def _browse_a(self) -> None:

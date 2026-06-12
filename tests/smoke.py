@@ -10,14 +10,9 @@ import sys
 import time
 
 _ROOT = os.path.dirname(os.path.abspath(__file__))
-_SRC = os.path.join(_ROOT, "src")
-_TESTS = os.path.join(_ROOT, "tests")
-if _TESTS not in sys.path:
-    sys.path.insert(0, _TESTS)
+_SRC = os.path.join(_ROOT, os.pardir, "src")
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
-
-import customtkinter as ctk  # noqa: E402
 
 from src.app import App  # noqa: E402
 from src.core.picker_engine import pick_to_b, delete_items
@@ -62,8 +57,8 @@ def main() -> int:
         print("[SKIP] no display")
         return 0
 
-    folder_a = os.path.abspath("./_smoke_a")
-    folder_b = os.path.abspath("./_smoke_b")
+    folder_a = os.path.join(_ROOT, "_smoke_a")
+    folder_b = os.path.join(_ROOT, "_smoke_b")
     for d in (folder_a, folder_b):
         if os.path.isdir(d):
             for root_, _, files in os.walk(d):

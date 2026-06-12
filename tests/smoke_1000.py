@@ -11,11 +11,9 @@ import sys
 import time
 
 _ROOT = os.path.dirname(os.path.abspath(__file__))
-_SRC = os.path.join(_ROOT, "src")
-_TESTS = os.path.join(_ROOT, "tests")
-for p in (_TESTS, _SRC):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+_SRC = os.path.join(_ROOT, os.pardir, "src")
+if _SRC not in sys.path:
+    sys.path.insert(0, _SRC)
 
 import customtkinter as ctk  # noqa: E402
 
@@ -45,7 +43,7 @@ def main() -> int:
         print("[SKIP] no display"); return 0
 
     # Use a fresh folder with 1000 unique JPGs
-    folder = os.path.abspath("./_smoke_1000")
+    folder = os.path.join(_ROOT, "_smoke_1000")
     if os.path.isdir(folder):
         for root_, _, files in os.walk(folder):
             for f in files:

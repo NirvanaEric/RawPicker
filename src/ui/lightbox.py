@@ -58,6 +58,9 @@ class Lightbox(ctk.CTkToplevel):
         self._decode_q: "queue.Queue[Tuple[int, object]]" = queue.Queue()
         self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="lb")
         self._configure_after_id: Optional[str] = None
+        self._pil_cache: dict = {}
+        self._pil_cache_lock = threading.Lock()
+        self._MAX_PIL_CACHE = 5
 
         # Window setup - keep the lightbox as a dark "stage" for photo
         # evaluation, regardless of the app theme.
@@ -242,6 +245,9 @@ class Lightbox(ctk.CTkToplevel):
         self._pool.submit(self._decode_worker, item, rid, iw, ih, self._zoom)
         self._rating.set_value(item.rating)
         self._update_pick_buttons(item.pick_status)
+        # Pre-decode prev/next into PIL cache
+        if len(self._items) > 1:
+            self._preload_adjacent()
 
     def _update_pick_buttons(self, status: str) -> None:
         """Update status badge, status bar, and button states."""
@@ -271,28 +277,64 @@ class Lightbox(ctk.CTkToplevel):
         """Decode image at target size on a worker thread.
 
         In "fit" mode, the image is resized to fit the target area
-        (preserving aspect ratio) before being sent to the main thread.
-        This moves the expensive LANCZOS resize off the main thread,
-        eliminating the primary stutter source.
+        (preserving aspect ratio).  The PIL cache avoids re-decoding
+        from disk when zoom-toggling or navigating.
         """
-        if not item.jpg_path or not os.path.isfile(item.jpg_path):
+        path = item.jpg_path
+        if not path or not os.path.isfile(path):
             self._decode_q.put((rid, None))
             return
         try:
-            with PILImage.open(item.jpg_path) as im:
-                im = transpose_image(im)
-                if zoom_mode == "fit":
-                    pil_w, pil_h = im.size
-                    scale = min(target_w / pil_w, target_h / pil_h)
-                    if scale < 1.0:
-                        new_w = max(int(pil_w * scale), 1)
-                        new_h = max(int(pil_h * scale), 1)
-                        im = im.resize((new_w, new_h), PILImage.Resampling.LANCZOS)
-                # Force full pixel decode while still on worker thread
-                im.load()
-            self._decode_q.put((rid, im))
+            pil = self._pil_cache_get(path)
+            if pil is None:
+                with PILImage.open(path) as im:
+                    pil = transpose_image(im)
+                    pil.load()
+                self._pil_cache_put(path, pil)
+            if zoom_mode == "fit":
+                pw, ph = pil.size
+                scale = min(target_w / pw, target_h / ph)
+                if scale < 1.0:
+                    nw = max(int(pw * scale), 1)
+                    nh = max(int(ph * scale), 1)
+                    pil = pil.resize((nw, nh), PILImage.Resampling.BILINEAR)
+            self._decode_q.put((rid, pil))
         except Exception:  # noqa: BLE001
             self._decode_q.put((rid, None))
+
+    def _pil_cache_get(self, path: str):
+        with self._pil_cache_lock:
+            return self._pil_cache.get(path)
+
+    def _pil_cache_put(self, path: str, pil) -> None:
+        with self._pil_cache_lock:
+            if len(self._pil_cache) >= self._MAX_PIL_CACHE:
+                self._pil_cache.pop(next(iter(self._pil_cache)))
+            self._pil_cache[path] = pil
+
+    def _preload_adjacent(self) -> None:
+        """Pre-decode prev/next images into the PIL cache."""
+        for delta in (-1, 1):
+            idx = (self._index + delta) % len(self._items)
+            item = self._items[idx]
+            p = item.jpg_path
+            if p and p not in self._pil_cache and os.path.isfile(p):
+                self._pool.submit(self._cache_worker, item)
+
+    def _cache_worker(self, item: PhotoItem) -> None:
+        p = item.jpg_path
+        if not p or not os.path.isfile(p):
+            return
+        with self._pil_cache_lock:
+            if p in self._pil_cache:
+                return
+        try:
+            with PILImage.open(p) as im:
+                pil = transpose_image(im)
+                pil.load()
+            self._pil_cache_put(p, pil)
+        except Exception:  # noqa: BLE001
+            pass
 
     def _poll_decode(self) -> None:
         try:

@@ -44,7 +44,7 @@ def _decode_to_pil(path: str, size: int) -> Optional[Image.Image]:
             img = ImageOps.exif_transpose(img)
             if img.mode not in ("RGB", "RGBA", "L"):
                 img = img.convert("RGB")
-            return img.resize((size, size), Image.Resampling.LANCZOS)
+            return img.resize((size, size), Image.Resampling.BILINEAR)
     except Exception:
         return None
 
@@ -52,7 +52,7 @@ def _decode_to_pil(path: str, size: int) -> Optional[Image.Image]:
 class _PilLru:
     """Thread-safe LRU for (path, size) → PIL.Image."""
 
-    def __init__(self, capacity: int = 1024):
+    def __init__(self, capacity: int = 2048):
         self._d: "OrderedDict[Tuple[str, int], Image.Image]" = OrderedDict()
         self._capacity = capacity
         self._lock = threading.Lock()
@@ -75,14 +75,19 @@ class _PilLru:
                 self._d.popitem(last=False)
         return pil
 
+    def peek(self, path: str, size: int) -> Optional[Image.Image]:
+        key = (path, size)
+        with self._lock:
+            return self._d.get(key)
+
 
 class ThumbnailLoader:
     """Decode thumbnails off the main thread; return PIL images."""
 
-    def __init__(self, num_workers: Optional[int] = None, capacity: int = 1024):
+    def __init__(self, num_workers: Optional[int] = None, capacity: int = 2048):
         if num_workers is None:
             cpu = os.cpu_count() or 2
-            num_workers = max(1, min(4, cpu))
+            num_workers = max(2, min(6, cpu + 2))
         self._num_workers = num_workers
         self._cache = _PilLru(capacity=capacity)
         self._q: "queue.Queue[Tuple[int, Optional[Image.Image]]]" = queue.Queue()
@@ -138,7 +143,7 @@ class ThumbnailLoader:
             with self._cb_lock:
                 self._callbacks.pop(cbid, None)
 
-    def dispatch(self, max_callbacks: int = 8) -> int:
+    def dispatch(self, max_callbacks: int = 12) -> int:
         """Drain the result queue and invoke registered callbacks.
 
         Call from the main thread. `max_callbacks` caps how many on_ready
@@ -180,6 +185,10 @@ class ThumbnailLoader:
     def is_cancelled(self, generation: int) -> bool:
         with self._cancel_lock:
             return generation in self._cancelled
+
+    def peek_cache(self, path: str, size: int) -> Optional[Image.Image]:
+        """Read-only cache lookup, main-thread safe. Returns None if missing."""
+        return self._cache.peek(path, size)
 
     def pending_count(self) -> int:
         with self._cb_lock:

@@ -47,7 +47,7 @@ from ..utils.thumbnail_loader import ThumbnailLoader
 _DEBOUNCE_MS = 150
 _POLL_INTERVAL_MS = 20
 _BG_DRAIN_INTERVAL_MS = 80   # interval for background decode drain
-_BG_DRAIN_BATCH = 2          # cells per background tick
+_BG_DRAIN_BATCH = 6          # cells per background tick
 _CELL_PAD = 8
 _CAPTION_H = 18        # filename strip below the thumbnail
 _BADGE_SIZE = 18       # size of pick / raw-missing badge
@@ -98,7 +98,8 @@ class ThumbnailGrid(ctk.CTkFrame):
         self._poll_id: Optional[str] = None
         self._bg_drain_id: Optional[str] = None
         self._pending_decode: set = set()  # indices awaiting decode submit
-        self._image_cache: dict = {}  # (path, size) → PIL.Image (survives relayout)
+        self._last_yview: float = 0.0  # scroll prediction
+        self._scrolling_down: Optional[bool] = None
 
         self._build_canvas()
         self._bind_events()
@@ -128,7 +129,6 @@ class ThumbnailGrid(ctk.CTkFrame):
                 pass
             self._bg_drain_id = None
         self._pending_decode.clear()
-        self._image_cache.clear()  # new item set → invalidate cache
         self._cells.clear()  # force rebuild on _do_relayout
         self._request_relayout()
 
@@ -276,12 +276,11 @@ class ThumbnailGrid(ctk.CTkFrame):
         # Reuse cached images from previous relayout (e.g. window resize).
         self._pending_decode = set()
         for idx, cell in enumerate(self._cells):
-            cache_key = (cell.item.jpg_path, self._size)
-            cached = self._image_cache.get(cache_key)
-            if cached is not None:
-                # Apply cached image immediately — no worker needed.
+            path = cell.item.jpg_path
+            pil = self._loader.peek_cache(path, self._size) if path else None
+            if pil is not None:
                 try:
-                    photo = ImageTk.PhotoImage(cached)
+                    photo = ImageTk.PhotoImage(pil)
                     cell.image_ref = photo
                     self._canvas.itemconfig(cell.image, image=photo, state="normal")
                     cell.state = "loaded"
@@ -327,6 +326,10 @@ class ThumbnailGrid(ctk.CTkFrame):
 
     def _on_scroll_visible(self) -> None:
         """Called on scroll/resize: submit decode for newly visible cells."""
+        yview = self._canvas.yview()
+        if yview:
+            self._scrolling_down = yview[0] > self._last_yview if self._last_yview else None
+            self._last_yview = yview[0]
         self._submit_visible_decode()
 
     def _start_bg_drain(self) -> None:
@@ -340,9 +343,18 @@ class ThumbnailGrid(ctk.CTkFrame):
         if not self._pending_decode:
             self._bg_drain_id = None
             return
+        # Sort pending by scroll direction: cells ahead of viewport first
+        if self._scrolling_down is not None:
+            sorted_ids = sorted(self._pending_decode,
+                                key=lambda i: self._cells[i].rect[1],
+                                reverse=not self._scrolling_down)
+        else:
+            sorted_ids = list(self._pending_decode)
         batch = 0
-        while self._pending_decode and batch < _BG_DRAIN_BATCH:
-            idx = self._pending_decode.pop()
+        for idx in sorted_ids:
+            if batch >= _BG_DRAIN_BATCH:
+                break
+            self._pending_decode.discard(idx)
             cell = self._cells[idx]
             item = cell.item
             if item.jpg_path and self._loader is not None:
@@ -376,9 +388,6 @@ class ThumbnailGrid(ctk.CTkFrame):
                     # Mark the cell with a tiny ⚠ so the user knows
                     self._canvas.itemconfig(cell.bg, outline=Colors.REJECTED, width=2)
                     return
-                # Cache the PIL image so relayout can reuse it instantly.
-                cache_key = (cell.item.jpg_path, self._size)
-                self._image_cache[cache_key] = pil_img
                 # PIL image is already resized to (size, size) on the worker.
                 photo = ImageTk.PhotoImage(pil_img)
                 cell.image_ref = photo

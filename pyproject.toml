@@ -1,0 +1,39 @@
+[project]
+name = "raw-picker-pro"
+version = "0.1.0"
+description = "Lightweight RAW + JPG picking and cleaning tool for photographers"
+requires-python = ">=3.11,<3.14"
+readme = "README.md"
+
+dependencies = [
+    "customtkinter>=5.2.2",
+    "Pillow>=10.4.0",
+    "tkintermapview>=1.3",
+    "send2trash>=1.8.3",
+    "pywinstyles>=1.8; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+raw-picker-pro = "src.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+ignore_missing_imports = true

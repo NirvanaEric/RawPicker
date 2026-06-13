@@ -5,7 +5,7 @@ import sys
 
 
 def main() -> int:
-    from .app import App
+    from src.app import App
     App().run()
     return 0
 

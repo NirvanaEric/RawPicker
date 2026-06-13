@@ -150,7 +150,7 @@ class PreviewPanel(ctk.CTkFrame):
     def show(self, item: Optional[PhotoItem]) -> None:
         self._item = item
         if item is None:
-            self._image_label.configure(image=None, text="(未选择)")
+            self._image_label.configure(text="(未选择)")
             self._name_lbl.configure(text="")
             self._set_exif_rows({})
             self._gps_lbl.configure(text="")
@@ -162,7 +162,7 @@ class PreviewPanel(ctk.CTkFrame):
         # is discarded when it returns.
         self._req_id += 1
         req_id = self._req_id
-        self._image_label.configure(image=None, text="加载中…")
+        self._image_label.configure(text="加载中…")
         threading.Thread(target=self._decode_worker,
                          args=(item, req_id), daemon=True).start()
 
@@ -208,7 +208,7 @@ class PreviewPanel(ctk.CTkFrame):
                 if ctk_img is not None:
                     self._image_label.configure(image=ctk_img, text="")
                 else:
-                    self._image_label.configure(image=None, text=fallback_text)
+                    self._image_label.configure(text=fallback_text)
         except queue.Empty:
             pass
         self.after(50, self._poll_decode)

@@ -37,3 +37,8 @@ pythonpath = ["src"]
 python_version = "3.11"
 warn_unused_ignores = true
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.20.0",
+]

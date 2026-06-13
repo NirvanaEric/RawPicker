@@ -11,6 +11,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, List, Optional, Tuple
 
+import tkinter as tk
+
 import customtkinter as ctk
 
 from ..config.settings import Colors
@@ -19,6 +21,10 @@ from ..models.photo_item import PhotoItem
 from .rating_widget import RatingWidget
 
 from PIL import Image as PILImage
+from PIL import ImageTk
+
+_ZOOM_LEVELS = [0.25, 0.50, 1.0, 2.0, 4.0]
+_DEFAULT_ZOOM_IDX = 2
 
 
 class Lightbox(ctk.CTkToplevel):
@@ -53,7 +59,8 @@ class Lightbox(ctk.CTkToplevel):
         self._on_pick_change = on_pick_change
         self._on_rating_change = on_rating_change
         self._req_id = 0
-        self._zoom = "fit"   # "fit" | "1:1"
+        self._zoom_idx = _DEFAULT_ZOOM_IDX
+        self._zoom_1_1 = False
         self._pil_image: "PILImage.Image | None" = None
         self._decode_q: "queue.Queue[Tuple[int, object]]" = queue.Queue()
         self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="lb")
@@ -61,6 +68,9 @@ class Lightbox(ctk.CTkToplevel):
         self._pil_cache: dict = {}
         self._pil_cache_lock = threading.Lock()
         self._MAX_PIL_CACHE = 5
+        self._fit_size: Optional[Tuple[int, int]] = None
+        self._pan_enabled = False
+        self._canvas_img_id: Optional[int] = None
 
         # Window setup - keep the lightbox as a dark "stage" for photo
         # evaluation, regardless of the app theme.
@@ -111,13 +121,15 @@ class Lightbox(ctk.CTkToplevel):
         body.grid_columnconfigure(0, weight=1)
         body.grid_rowconfigure(0, weight=1)
 
-        # Image area: a CTkLabel that resizes with the window
-        self._image_label = ctk.CTkLabel(
-            body, text="", fg_color=Colors.LIGHTBOX_BG, text_color=Colors.TEXT_DISABLED,
+        # Image area: tk.Canvas for zoom + drag pan
+        self._image_canvas = tk.Canvas(
+            body, bg=Colors.LIGHTBOX_BG, highlightthickness=0, relief="flat",
         )
-        self._image_label.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        self._image_label.bind("<Configure>", self._on_configure)
-        self._image_label.bind("<MouseWheel>", self._on_mousewheel)
+        self._image_canvas.grid(row=0, column=0, sticky="nsew")
+        self._image_canvas.bind("<Configure>", self._on_configure)
+        self._image_canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self._image_canvas.bind("<ButtonPress-1>", self._on_drag_start)
+        self._image_canvas.bind("<B1-Motion>", self._on_drag_move)
 
         # Status indicator bar (thin colored line below image)
         self._status_bar = ctk.CTkFrame(self, height=2, corner_radius=0,
@@ -172,11 +184,13 @@ class Lightbox(ctk.CTkToplevel):
                       text_color="#F5F5F7", font=ctk.CTkFont(size=11),
                       command=self._next
                       ).pack(side="left", padx=2)
-        ctk.CTkButton(nav, text="Z  1:1", width=64, height=30, corner_radius=15,
-                      fg_color=Colors.SURFACE_RAISED, hover_color=Colors.BORDER,
-                      text_color="#F5F5F7", font=ctk.CTkFont(size=11),
-                      command=self._toggle_zoom
-                      ).pack(side="left", padx=(4, 0))
+        self._zoom_btn = ctk.CTkButton(
+            nav, text="Z  100%", width=64, height=30, corner_radius=15,
+            fg_color=Colors.SURFACE_RAISED, hover_color=Colors.BORDER,
+            text_color="#F5F5F7", font=ctk.CTkFont(size=11),
+            command=self._toggle_zoom,
+        )
+        self._zoom_btn.pack(side="left", padx=(4, 0))
 
     def _bind_keys(self) -> None:
         for ks in ("Escape", "Left", "Right", "a", "A", "d", "D",
@@ -222,27 +236,35 @@ class Lightbox(ctk.CTkToplevel):
         self._show_current()
 
     def _toggle_zoom(self) -> None:
-        self._zoom = "1:1" if self._zoom == "fit" else "fit"
-        # Re-decode at the appropriate size (worker does the resize for fit)
-        self._show_current()
+        if self._zoom_1_1:
+            self._zoom_1_1 = False
+            self._zoom_idx = _DEFAULT_ZOOM_IDX
+        else:
+            self._zoom_1_1 = True
+        self._refresh_image()
 
     def _show_current(self) -> None:
         item = self.current_item()
         if item is None:
             self._title_lbl.configure(text="(无照片)")
             self._counter_lbl.configure(text="0 / 0")
-            self._image_label.configure(image=None, text="(无照片)")
+            self._image_canvas.delete("all")
+            self._image_canvas.create_text(
+                10, 10, text="(无照片)", fill=Colors.TEXT_DISABLED,
+                font=("", 12), anchor="nw")
             return
         self._title_lbl.configure(text=item.display_name)
         self._counter_lbl.configure(text=f"{self._index + 1} / {len(self._items)}")
         self._req_id += 1
         rid = self._req_id
         self._pil_image = None
-        self._image_label.configure(image=None, text="加载中…")
-        # Compute target size now (main thread) so worker doesn't touch Tk
-        iw = max(self._image_label.winfo_width(), 200)
-        ih = max(self._image_label.winfo_height(), 200)
-        self._pool.submit(self._decode_worker, item, rid, iw, ih, self._zoom)
+        self._zoom_idx = _DEFAULT_ZOOM_IDX
+        self._zoom_1_1 = False
+        self._image_canvas.delete("all")
+        self._image_canvas.create_text(
+            10, 10, text="加载中…", fill=Colors.TEXT_DISABLED,
+            font=("", 12), anchor="nw", tags="loading")
+        self._pool.submit(self._decode_worker, item, rid)
         self._rating.set_value(item.rating)
         self._update_pick_buttons(item.pick_status)
         # Pre-decode prev/next into PIL cache
@@ -272,13 +294,11 @@ class Lightbox(ctk.CTkToplevel):
             self._btn_accepted.configure(fg_color=Colors.ACCEPTED, text_color="white")
             self._btn_rejected.configure(fg_color=Colors.REJECTED, text_color="white")
 
-    def _decode_worker(self, item: PhotoItem, rid: int,
-                       target_w: int, target_h: int, zoom_mode: str) -> None:
-        """Decode image at target size on a worker thread.
+    def _decode_worker(self, item: PhotoItem, rid: int) -> None:
+        """Decode full-resolution PIL image on a worker thread.
 
-        In "fit" mode, the image is resized to fit the target area
-        (preserving aspect ratio).  The PIL cache avoids re-decoding
-        from disk when zoom-toggling or navigating.
+        The _refresh_image method handles all resizing on the main thread
+        (BILINEAR is fast enough for interactive zoom levels).
         """
         path = item.jpg_path
         if not path or not os.path.isfile(path):
@@ -291,13 +311,6 @@ class Lightbox(ctk.CTkToplevel):
                     pil = transpose_image(im)
                     pil.load()
                 self._pil_cache_put(path, pil)
-            if zoom_mode == "fit":
-                pw, ph = pil.size
-                scale = min(target_w / pw, target_h / ph)
-                if scale < 1.0:
-                    nw = max(int(pw * scale), 1)
-                    nh = max(int(ph * scale), 1)
-                    pil = pil.resize((nw, nh), PILImage.Resampling.BILINEAR)
             self._decode_q.put((rid, pil))
         except Exception:  # noqa: BLE001
             self._decode_q.put((rid, None))
@@ -344,10 +357,16 @@ class Lightbox(ctk.CTkToplevel):
                     continue
                 if pil_img is not None:
                     self._pil_image = pil_img
+                    self._image_canvas.delete("loading")
                     self._refresh_image()
                 else:
                     self._pil_image = None
-                    self._image_label.configure(image=None, text="(无法读取)")
+                    self._image_canvas.delete("all")
+                    cw = max(self._image_canvas.winfo_width(), 100)
+                    ch = max(self._image_canvas.winfo_height(), 100)
+                    self._image_canvas.create_text(
+                        cw // 2, ch // 2, text="(无法读取)",
+                        fill=Colors.TEXT_DISABLED, font=("", 12))
         except queue.Empty:
             pass
         self.after(50, self._poll_decode)
@@ -362,41 +381,101 @@ class Lightbox(ctk.CTkToplevel):
         self._configure_after_id = self.after(100, self._configure_done)
 
     def _configure_done(self) -> None:
-        """Fire after debounce: re-decode at new size in fit mode."""
+        """Re-fit image after window resize."""
         self._configure_after_id = None
         if self._pil_image is None:
             return
-        if self._zoom == "fit":
-            # Re-decode at the new label size
-            self._show_current()
-        else:
-            # 1:1 mode — just re-wrap, no re-decode needed
+        if not self._zoom_1_1 and self._zoom_idx == _DEFAULT_ZOOM_IDX:
+            # Fit mode: recalculate fit_size against new viewport
+            self._refresh_image()
+        elif self._pan_enabled:
+            # Zoomed in: just re-center image in available space
             self._refresh_image()
 
     def _on_mousewheel(self, event) -> None:
-        """Scroll wheel toggles fit/1:1 zoom."""
-        self._toggle_zoom()
-
-    def _refresh_image(self) -> None:
-        """Re-create CTkImage from the stored PIL image at the current size.
-
-        In "fit" mode the image has already been resized by the worker
-        thread, so this just wraps it in a CTkImage (cheap). In "1:1"
-        mode the image is shown at native resolution.
-        """
-        self._configure_after_id = None
+        """Scroll wheel adjusts zoom level."""
         if self._pil_image is None:
             return
+        old_idx = self._zoom_idx
+        if event.delta > 0:
+            self._zoom_idx = min(len(_ZOOM_LEVELS) - 1, self._zoom_idx + 1)
+        else:
+            self._zoom_idx = max(0, self._zoom_idx - 1)
+        if self._zoom_idx != old_idx:
+            self._zoom_1_1 = False
+            self._refresh_image()
+
+    def _refresh_image(self) -> None:
+        """Resize cached PIL to current zoom level and display on canvas."""
+        self._configure_after_id = None
+        pil = self._pil_image
+        if pil is None:
+            return
         try:
-            w, h = self._pil_image.size
-            from customtkinter import CTkImage
-            ctk_img = CTkImage(light_image=self._pil_image, dark_image=self._pil_image, size=(w, h))
-            self._image_label.configure(image=ctk_img, text="")
-            # prevent GC of the CTkImage
-            self._current_ctk_img = ctk_img
+            canvas = self._image_canvas
+            vw = max(canvas.winfo_width(), 20)
+            vh = max(canvas.winfo_height(), 20)
+            pw, ph = pil.size
+
+            # Compute fit size (image filling viewport while preserving aspect)
+            fit_scale = min(vw / pw, vh / ph)
+            fit_w = max(int(pw * fit_scale), 1)
+            fit_h = max(int(ph * fit_scale), 1)
+            self._fit_size = (fit_w, fit_h)
+
+            # Determine display size
+            if self._zoom_1_1:
+                dw, dh = pw, ph
+            else:
+                factor = _ZOOM_LEVELS[self._zoom_idx]
+                dw = max(int(fit_w * factor), 1)
+                dh = max(int(fit_h * factor), 1)
+
+            # Resize (cheap BILINEAR since PIL is cached in memory)
+            if (dw, dh) != pil.size:
+                display = pil.resize((dw, dh), PILImage.Resampling.BILINEAR)
+            else:
+                display = pil
+
+            photo = ImageTk.PhotoImage(display)
+            self._canvas_img_ref = photo  # prevent GC
+
+            # Clear and rebuild canvas
+            canvas.delete("all")
+
+            if dw <= vw and dh <= vh:
+                # Image fits viewport: center it
+                cx = (vw - dw) // 2
+                cy = (vh - dh) // 2
+                self._canvas_img_id = canvas.create_image(cx, cy, image=photo, anchor="nw")
+                canvas.configure(scrollregion=(0, 0, vw, vh))
+                self._pan_enabled = False
+            else:
+                # Image larger than viewport: enable panning
+                self._canvas_img_id = canvas.create_image(0, 0, image=photo, anchor="nw")
+                canvas.configure(scrollregion=(0, 0, dw, dh))
+                self._pan_enabled = True
+
+            # Zoom label for Z button
+            if self._zoom_1_1:
+                zoom_text = "1:1"
+            else:
+                pct = int(_ZOOM_LEVELS[self._zoom_idx] * 100)
+                zoom_text = f"{pct}%"
+            self._zoom_btn.configure(text=f"Z  {zoom_text}")
         except Exception:  # noqa: BLE001
             pass
 
+    # -- drag panning -----------------------------------------------------
+    def _on_drag_start(self, event) -> None:
+        if self._pan_enabled:
+            self._image_canvas.scan_mark(event.x, event.y)
+
+    def _on_drag_move(self, event) -> None:
+        if self._pan_enabled:
+            self._image_canvas.scan_dragto(event.x, event.y, gain=1)
+
+    # -- pick / rating / close --------------------------------------------
     def _emit_pick(self, status: str) -> None:
         item = self.current_item()
         if item is None:

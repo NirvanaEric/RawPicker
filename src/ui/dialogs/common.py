@@ -115,12 +115,17 @@ class ConflictDialog(_DialogShell):
         self.destroy()
 
 
-class ReportDialog(_DialogShell):
-    """Read-only report viewer. Shows a scrollable text block."""
+class ReportDialog(ctk.CTkToplevel):
+    """Read-only report viewer. Uses wait_window (no grab_set) to avoid
+    CTk/after callback interaction issues."""
 
     def __init__(self, master, *, title: str, body: str) -> None:
-        super().__init__(master, title=title, width=600, height=460)
+        super().__init__(master)
+        self.title(title)
+        self.geometry("600x460")
         self.resizable(True, True)
+        self.configure(fg_color=Colors.BG)
+        self.bind("<Escape>", lambda _e: self.destroy())
 
         ctk.CTkLabel(self, text=title, anchor="w",
                      text_color=Colors.TEXT,
@@ -141,3 +146,9 @@ class ReportDialog(_DialogShell):
             font=ctk.CTkFont(weight="bold"),
             command=self.destroy,
         ).pack(pady=(0, 16))
+
+        self.after(50, self._bring_to_front)
+
+    def _bring_to_front(self) -> None:
+        self.lift()
+        self.focus_force()

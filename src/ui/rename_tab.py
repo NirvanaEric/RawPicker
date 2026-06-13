@@ -161,7 +161,17 @@ class RenameTab(ctk.CTkFrame):
             return
         template = self._template_var.get()
         folder = self._folder_var.get().strip()
-        result = rename_items(items, template, folder)
+
+        def work() -> None:
+            try:
+                result = rename_items(items, template, folder)
+                self.after(0, lambda: self._rename_done(result, folder))
+            except Exception as exc:
+                self.after(0, lambda: self._on_show_message("重命名错误", str(exc)))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _rename_done(self, result, folder: str) -> None:
         self._on_show_message("重命名报告", result.as_text())
         self._on_rename_done()
         self._scan_done([])

@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional
+import threading
+from typing import Callable, List, Optional
 
 import customtkinter as ctk
 
@@ -11,7 +12,7 @@ from .core.cleaner_engine import CleanReport, clean_orphans
 from .core.picker_engine import PickReport, pick_to_b, delete_items
 from .models.orphan_item import OrphanItem
 from .models.photo_item import PhotoItem
-from .ui.dialogs.common import ConfirmDialog, ConflictDialog, ReportDialog
+from .ui.dialogs.common import ConfirmDialog, ReportDialog
 from .ui.lightbox import Lightbox
 from .ui.main_window import MainWindow
 from .utils.config_store import load_config, save_config
@@ -58,7 +59,8 @@ class App:
 
     # -- message dialogs ---------------------------------------------------
     def show_message(self, title: str, body: str) -> None:
-        ReportDialog(self.window, title=title, body=body)
+        dlg = ReportDialog(self.window, title=title, body=body)
+        self.window.wait_window(dlg)
 
     # -- batch workflow (move accepted → B, delete rejected) ----------------
     def handle_pick_to_b(self, items: List[PhotoItem]) -> None:
@@ -66,19 +68,19 @@ class App:
         if not items:
             self.show_message("执行操作", "没有标记的照片")
             return
-        # Separate by status
         accepted = [it for it in items if it.pick_status == "accepted"]
         rejected = [it for it in items if it.pick_status == "rejected"]
         if not accepted and not rejected:
             self.show_message("执行操作", "没有需要操作的照片（仅有 Pending 状态）")
             return
-        # Validate B folder for accepted items
         if accepted:
             folder_b = self.window.pick_tab().get_folders()[1]
             if not folder_b or not os.path.isdir(folder_b):
                 self.show_message("执行操作", f"Folder B 无效: {folder_b}")
                 return
-        # Build confirmation message
+        else:
+            folder_b = ""
+        folder_a = self.window.pick_tab().get_folders()[0]
         parts = []
         if accepted:
             raw_count = sum(1 for it in accepted if it.has_raw)
@@ -99,31 +101,43 @@ class App:
         self.window.wait_window(dlg)
         if not dlg.get_result():
             return
-        # Execute moves
-        report = PickReport()
-        if accepted:
-            move_report = pick_to_b(accepted, folder_b, resolver=self.resolve_conflict)
-            report.moved_jpg = move_report.moved_jpg
-            report.moved_raw = move_report.moved_raw
-            report.missing_raw = move_report.missing_raw
-            report.skipped.extend(move_report.skipped)
-            report.failed.extend(move_report.failed)
-        # Execute deletes
-        if rejected:
-            folder_a = self.window.pick_tab().get_folders()[0]
-            del_report = delete_items(rejected, target_folder=folder_a)
-            report.deleted_jpg = del_report.deleted_jpg
-            report.deleted_raw = del_report.deleted_raw
-            report.recycle_folder = del_report.recycle_folder
-            report.failed.extend(del_report.failed)
-        self.show_message("操作完成", report.as_text())
-        # Refresh pick tab
-        self.window.pick_tab().scan()
+        # Run file operations in background thread to keep UI responsive
+        result: List[PickReport] = []
 
-    def resolve_conflict(self, dst: str) -> Optional[str]:
-        dlg = ConflictDialog(self.window, dst=dst)
-        self.window.wait_window(dlg)
-        return dlg.get_result()
+        def work() -> None:
+            report = PickReport()
+            try:
+                if accepted:
+                    move_report = pick_to_b(accepted, folder_b, resolver=None)
+                    report.moved_jpg = move_report.moved_jpg
+                    report.moved_raw = move_report.moved_raw
+                    report.missing_raw = move_report.missing_raw
+                    report.skipped.extend(move_report.skipped)
+                    report.failed.extend(move_report.failed)
+                if rejected:
+                    del_report = delete_items(rejected, target_folder=folder_a)
+                    report.deleted_jpg = del_report.deleted_jpg
+                    report.deleted_raw = del_report.deleted_raw
+                    report.recycle_folder = del_report.recycle_folder
+                    report.failed.extend(del_report.failed)
+            except Exception as exc:
+                report.failed.append(str(exc))
+            result.append(report)
+
+        def done() -> None:
+            if result:
+                self.show_message("操作完成", result[0].as_text())
+                self.window.pick_tab().scan()
+
+        t = threading.Thread(target=work, daemon=True)
+        t.start()
+        self._poll_thread(t, done)
+
+    def _poll_thread(self, thread: threading.Thread, callback: Callable[[], None]) -> None:
+        if thread.is_alive():
+            self.window.after(100, lambda: self._poll_thread(thread, callback))
+        else:
+            callback()
 
     def handle_recent_pair(self, a: str, b: str) -> None:
         if a and b:
@@ -149,10 +163,25 @@ class App:
         self.window.wait_window(dlg)
         if not dlg.get_result():
             return
-        report: CleanReport = clean_orphans(orphans, mode=mode, target_folder=target_folder)
-        self.show_message("清理完成", report.as_text())
-        # Re-scan
-        self.window.clean_tab().scan()
+        result: List[CleanReport] = []
+
+        def work() -> None:
+            try:
+                report = clean_orphans(orphans, mode=mode, target_folder=target_folder)
+                result.append(report)
+            except Exception as exc:
+                r = CleanReport()
+                r.failed.append(str(exc))
+                result.append(r)
+
+        def done() -> None:
+            if result:
+                self.show_message("清理完成", result[0].as_text())
+                self.window.clean_tab().scan()
+
+        t = threading.Thread(target=work, daemon=True)
+        t.start()
+        self._poll_thread(t, done)
 
     # -- rename workflow ---------------------------------------------------
     def handle_rename_done(self) -> None:

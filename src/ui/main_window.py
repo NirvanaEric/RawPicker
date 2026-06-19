@@ -9,6 +9,7 @@ from tkinter import StringVar
 from ..config.settings import AppConfig, Colors
 from ..utils.image_cache import ImageCache, PreviewCache
 from ..utils.thumbnail_loader import ThumbnailLoader
+from .. import __version__
 from .clean_tab import CleanTab
 from .pick_tab import PickTab
 from .rename_tab import RenameTab
@@ -24,7 +25,7 @@ class MainWindow(ctk.CTk):
         self._cache: Optional[ImageCache] = None
         self._preview_cache = preview_cache
         self._cbs = controller_callbacks
-        self.title("RawPicker")
+        self.title(f"RawPicker {__version__}")
         self.geometry("1400x900")
         self.minsize(1100, 700)
 

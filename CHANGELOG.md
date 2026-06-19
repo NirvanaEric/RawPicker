@@ -6,11 +6,19 @@
 - Screenshots in README (main_screen.jpg, lightbox.jpg)
 - CHANGELOG.md
 - LICENSE (GPL-3.0)
+- Exe version metadata (FileVersion/ProductVersion in file properties)
+- Version shown in window title
 
 ### Changed
-- README restructured to yiyin-style: features, usage, screenshots, shortcuts, supported formats, ending, donate
-- README split into Chinese (README.md) and English (readme_en.md)
+- README restructured to yiyin-style
 - Software name changed from "RawPicker Pro" to "RawPicker"
+- Dark theme locked, theme config removed
+
+### Fixed
+- Mouse wheel scroll direction (wheel up → later photos)
+- Scroll boundary guard (no empty scroll at top/bottom)
+- Config auto-migration from old appdata paths
+- Default theme is now dark for new users
 
 ## [0.1.0] - 2026-06-12
 

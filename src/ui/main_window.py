@@ -29,7 +29,7 @@ class MainWindow(ctk.CTk):
         self.minsize(1100, 700)
 
         # Apply theme
-        ctk.set_appearance_mode("light" if config.theme != "dark" else "dark")
+        ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
         # Root window colour: must match theme. The default CTk dark grey is

@@ -102,7 +102,6 @@ class AppConfig:
     jpg_formats: List[str] = field(default_factory=lambda: list(JPG_FORMATS))
     thumbnail_size: int = 160
     preview_max_height: int = 400
-    theme: str = "dark"                # "dark" | "light"
     delete_mode: str = "trash"         # "trash" | "permanent"
     recent_paths: List[Tuple[str, str]] = field(default_factory=list)  # (A, B) pairs
     xmp_writeback: bool = False
@@ -124,7 +123,6 @@ class AppConfig:
             "jpg_formats": list(self.jpg_formats),
             "thumbnail_size": self.thumbnail_size,
             "preview_max_height": self.preview_max_height,
-            "theme": self.theme,
             "delete_mode": self.delete_mode,
             "recent_paths": [list(p) for p in self.recent_paths],
             "xmp_writeback": self.xmp_writeback,
@@ -140,7 +138,6 @@ class AppConfig:
         cfg.jpg_formats = data.get("jpg_formats", list(JPG_FORMATS))
         cfg.thumbnail_size = int(data.get("thumbnail_size", 160))
         cfg.preview_max_height = int(data.get("preview_max_height", 400))
-        cfg.theme = data.get("theme", "dark")
         cfg.delete_mode = data.get("delete_mode", "trash")
         cfg.recent_paths = [tuple(p) for p in data.get("recent_paths", [])]
         cfg.xmp_writeback = bool(data.get("xmp_writeback", False))

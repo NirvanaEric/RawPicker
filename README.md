@@ -35,11 +35,11 @@
 
 **主界面**
 
-![主界面](main_screen.jpg)
+![主界面](.tmp/main_screen.jpg)
 
 **灯箱预览**
 
-![灯箱](lightbox.jpg)
+![灯箱](.tmp/lightbox.jpg)
 
 ## 快捷键
 

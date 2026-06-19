@@ -96,6 +96,8 @@ icon.ico          应用程序图标
 
 **QQ 群:** 待创建
 
+![reward_code](reward_code.JPG)
+
 ---
 
 > English version: [readme_en.md](readme_en.md)

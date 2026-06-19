@@ -1,4 +1,4 @@
-# RawPicker Pro
+# RawPicker
 
 A lightweight RAW + JPG picking and cleaning desktop app for photographers — keyboard-first, dark-themed, performance-optimized, and forever free & open-source.
 
@@ -31,7 +31,7 @@ Requires Python 3.11+ and [uv](https://github.com/astral-sh/uv).
 uv sync
 
 # Run the app
-uv run raw-picker-pro
+uv run rawpicker
 ```
 
 ## Packaging
@@ -42,7 +42,7 @@ Build a standalone Windows executable with PyInstaller:
 uv run pyinstaller --onefile --windowed --strip --icon icon.ico src/main.py
 ```
 
-The output is at `dist/RawPickerPro.exe`.
+The output is at `dist/RawPicker.exe`.
 
 ## Project layout
 

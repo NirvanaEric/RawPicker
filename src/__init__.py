@@ -1,2 +1,2 @@
-"""RawPicker Pro - entry point package."""
+"""RawPicker - entry point package."""
 __version__ = "0.1.0"

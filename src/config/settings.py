@@ -148,11 +148,11 @@ class AppConfig:
         return cfg
 
 
-# Default location for persisted settings: %APPDATA%/RawPickerPro/settings.json
+# Default location for persisted settings: %APPDATA%/RawPicker/settings.json
 def default_config_path() -> Path:
     import os
     base = os.environ.get("APPDATA") or str(Path.home() / ".config")
-    return Path(base) / "RawPickerPro" / "settings.json"
+    return Path(base) / "RawPicker" / "settings.json"
 
 
 PICK_STATES = ("accepted", "rejected", "pending")

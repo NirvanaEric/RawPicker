@@ -24,7 +24,7 @@ class MainWindow(ctk.CTk):
         self._cache: Optional[ImageCache] = None
         self._preview_cache = preview_cache
         self._cbs = controller_callbacks
-        self.title("RawPicker Pro")
+        self.title("RawPicker")
         self.geometry("1400x900")
         self.minsize(1100, 700)
 

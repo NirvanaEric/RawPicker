@@ -5,6 +5,8 @@ description = "Lightweight RAW + JPG picking and cleaning tool for photographers
 requires-python = ">=3.11,<3.14"
 readme = "README.md"
 
+license = "GPL-3.0-only"
+
 dependencies = [
     "customtkinter>=5.2.2",
     "Pillow>=10.4.0",

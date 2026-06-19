@@ -102,7 +102,7 @@ class AppConfig:
     jpg_formats: List[str] = field(default_factory=lambda: list(JPG_FORMATS))
     thumbnail_size: int = 160
     preview_max_height: int = 400
-    theme: str = "light"               # "dark" | "light"
+    theme: str = "dark"                # "dark" | "light"
     delete_mode: str = "trash"         # "trash" | "permanent"
     recent_paths: List[Tuple[str, str]] = field(default_factory=list)  # (A, B) pairs
     xmp_writeback: bool = False

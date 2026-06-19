@@ -8,3 +8,4 @@ build/
 .tmp/
 PRD/
 docs/
+reward_code.*

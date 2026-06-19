@@ -551,6 +551,9 @@ class ThumbnailGrid(ctk.CTkFrame):
         if event.delta == 0:
             return
         delta = 1 if event.delta > 0 else -1
+        first, last = self._canvas.yview()
+        if (delta > 0 and last >= 1.0) or (delta < 0 and first <= 0.0):
+            return  # at boundary or content fills viewport
         self._canvas.yview_scroll(delta, "units")
         self._on_scroll_visible()
 

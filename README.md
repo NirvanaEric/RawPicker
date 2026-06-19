@@ -90,7 +90,7 @@
 (´･ω･`)(´･ω･`)(´･ω･`)(´･ω･`)
 
 
-<img src="https://github.com/user-attachments/assets/de454f40-8e50-4c7b-967c-7d731f0d9986" width="200" alt="reward_code">
+<img src="https://github.com/user-attachments/assets/de454f40-8e50-4c7b-967c-7d731f0d9986" width="400" alt="reward_code">
 
 ---
 

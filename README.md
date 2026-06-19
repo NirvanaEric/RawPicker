@@ -78,14 +78,6 @@
 
 **QQ 群:** 待创建
 
-## 打包
-
-```powershell
-uv run python build.py
-```
-
-输出 `dist/RawPicker.exe`（版本号来自 `src/__init__.py`）。
-
 ![reward_code](https://github.com/user-attachments/assets/de454f40-8e50-4c7b-967c-7d731f0d9986)
 
 ---

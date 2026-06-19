@@ -34,16 +34,6 @@ uv sync
 uv run rawpicker
 ```
 
-## Packaging
-
-Build a standalone Windows executable with version metadata:
-
-```powershell
-uv run python build.py
-```
-
-The output is at `dist/RawPicker.exe` (version sourced from `src/__init__.py`).
-
 ## Project layout
 
 ```

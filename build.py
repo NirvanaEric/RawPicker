@@ -12,6 +12,8 @@ from src import __version__  # noqa: E402
 ver_parts = tuple(int(x) for x in __version__.split("."))
 ver_tuple = ver_parts + (0,) * max(0, 4 - len(ver_parts))
 
+exe_name = f"RawPicker_{__version__}"
+
 VERSION_INFO = f"""# UTF-8
 VSVersionInfo(
   ffi=FixedFileInfo(
@@ -34,7 +36,7 @@ VSVersionInfo(
         StringStruct(u'FileVersion', u'{__version__}'),
         StringStruct(u'InternalName', u'RawPicker'),
         StringStruct(u'LegalCopyright', u''),
-        StringStruct(u'OriginalFilename', u'RawPicker.exe'),
+        StringStruct(u'OriginalFilename', u'{exe_name}.exe'),
         StringStruct(u'ProductName', u'RawPicker'),
         StringStruct(u'ProductVersion', u'{__version__}')])
       ]),
@@ -65,11 +67,11 @@ subprocess.run(
      "--exclude-module", "pip",
      "--exclude-module", "distutils",
      "--exclude-module", "pkg_resources",
-     "--name", "RawPicker",
+     "--name", exe_name,
      str(SRC / "src/main.py")],
     check=True,
 )
 
 # Clean up generated version file
 ver_file.unlink(missing_ok=True)
-print(f"Done: dist/RawPicker.exe (v{__version__})")
+print(f"Done: dist/{exe_name}.exe (v{__version__})")

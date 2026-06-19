@@ -36,13 +36,13 @@ uv run rawpicker
 
 ## Packaging
 
-Build a standalone Windows executable with PyInstaller:
+Build a standalone Windows executable with version metadata:
 
 ```powershell
-uv run pyinstaller --onefile --windowed --strip --icon icon.ico src/main.py
+uv run python build.py
 ```
 
-The output is at `dist/RawPicker.exe`.
+The output is at `dist/RawPicker.exe` (version sourced from `src/__init__.py`).
 
 ## Project layout
 

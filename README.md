@@ -35,11 +35,11 @@
 
 **主界面**
 
-![主界面](.tmp/main_screen.jpg)
+![主界面](static/main_screen.jpg)
 
 **灯箱预览**
 
-![灯箱](.tmp/lightbox.jpg)
+![灯箱](static/lightbox.jpg)
 
 ## 快捷键
 
@@ -78,7 +78,7 @@
 
 **QQ 群:** 待创建
 
-![reward_code](reward_code.JPG)
+![reward_code](https://github.com/user-attachments/assets/de454f40-8e50-4c7b-967c-7d731f0d9986)
 
 ---
 

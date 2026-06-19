@@ -186,8 +186,8 @@ class ThumbnailGrid(ctk.CTkFrame):
         c.bind("<Leave>", lambda _e: self._on_motion_leave())
         # Wheel: Windows / macOS use MouseWheel; X11 uses Button-4 / 5
         c.bind("<MouseWheel>", self._on_wheel)
-        c.bind("<Button-4>", lambda _e: self._canvas.yview_scroll(-1, "units"))
-        c.bind("<Button-5>", lambda _e: self._canvas.yview_scroll(1, "units"))
+        c.bind("<Button-4>", lambda _e: self._canvas.yview_scroll(1, "units"))
+        c.bind("<Button-5>", lambda _e: self._canvas.yview_scroll(-1, "units"))
         # Arrow key navigation. Bind on the underlying tk canvas (CTk forbids
         # bind_all). The grid still gets the events when the canvas or any
         # descendant has focus.
@@ -550,7 +550,7 @@ class ThumbnailGrid(ctk.CTkFrame):
         # Windows / macOS: event.delta is a multiple of 120 per notch
         if event.delta == 0:
             return
-        delta = -1 if event.delta > 0 else 1
+        delta = 1 if event.delta > 0 else -1
         self._canvas.yview_scroll(delta, "units")
         self._on_scroll_visible()
 
